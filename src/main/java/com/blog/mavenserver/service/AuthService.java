@@ -4,6 +4,7 @@ import com.blog.mavenserver.dto.CommonResponse;
 import com.blog.mavenserver.dto.LoginRequest;
 import com.blog.mavenserver.dto.LoginResponse;
 import com.blog.mavenserver.dto.RegisterRequest;
+import com.blog.mavenserver.dto.ResetPasswordRequest;
 import com.blog.mavenserver.dto.TokenValidateRequest;
 import com.blog.mavenserver.dto.TokenValidateResponse;
 import com.blog.mavenserver.entity.Token;
@@ -312,6 +313,74 @@ public class AuthService {
         } catch (Exception e) {
             logger.error("管理员权限验证异常：{}", e.getMessage(), e);
             return false;
+        }
+    }
+    
+    public CommonResponse resetPassword(ResetPasswordRequest request) {
+        try {
+            // 参数验证
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                logger.warn("重置密码失败：邮箱为空");
+                return new CommonResponse(false, "邮箱不能为空");
+            }
+            
+            if (request.getCode() == null || request.getCode().trim().isEmpty()) {
+                logger.warn("重置密码失败：验证码为空，邮箱：{}", request.getEmail());
+                return new CommonResponse(false, "验证码不能为空");
+            }
+            
+            if (request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+                logger.warn("重置密码失败：新密码为空，邮箱：{}", request.getEmail());
+                return new CommonResponse(false, "新密码不能为空");
+            }
+            
+            if (request.getNewPassword().length() < 6) {
+                logger.warn("重置密码失败：新密码长度不足，邮箱：{}", request.getEmail());
+                return new CommonResponse(false, "新密码不能少于6位");
+            }
+            
+            if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+                logger.warn("重置密码失败：两次密码输入不一致，邮箱：{}", request.getEmail());
+                return new CommonResponse(false, "两次密码输入不一致");
+            }
+
+            // 验证用户是否存在
+            Optional<User> userOpt = userRepository.findByEmail(request.getEmail().trim());
+            if (!userOpt.isPresent()) {
+                logger.warn("重置密码失败：用户不存在，邮箱：{}", request.getEmail());
+                return new CommonResponse(false, "该邮箱未注册");
+            }
+            
+            User user = userOpt.get();
+            
+            // 检查用户状态
+            if (!"正常".equals(user.getStatus())) {
+                logger.warn("重置密码失败：用户状态异常，邮箱：{}，状态：{}", request.getEmail(), user.getStatus());
+                return new CommonResponse(false, "账户状态异常，无法重置密码");
+            }
+
+            // 验证验证码（修改类型）
+            if (!emailService.verifyCode(request.getEmail().trim(), request.getCode().trim(), "修改")) {
+                logger.warn("重置密码失败：验证码错误或已过期，邮箱：{}", request.getEmail());
+                return new CommonResponse(false, "验证码错误或已过期");
+            }
+
+            // 加密新密码
+            String encodedPassword = passwordEncoder.encode(request.getNewPassword().trim());
+            
+            // 更新密码
+            user.setPassword(encodedPassword);
+            userRepository.save(user);
+            
+            // 清除该用户的所有Token（强制重新登录）
+            tokenRepository.deleteByUserId(user.getId());
+            
+            logger.info("密码重置成功：邮箱 {}，用户 {}", request.getEmail(), user.getUsername());
+            return new CommonResponse(true, "密码重置成功");
+
+        } catch (Exception e) {
+            logger.error("密码重置异常：邮箱 {}，错误信息：{}", request.getEmail(), e.getMessage(), e);
+            return new CommonResponse(false, "密码重置失败，请稍后重试");
         }
     }
 }

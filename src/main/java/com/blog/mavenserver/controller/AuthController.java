@@ -124,4 +124,39 @@ public class AuthController {
         logger.info("获取配置成功：共 {} 条配置", configs.size());
         return new GetConfigsResponse(true, "获取配置成功", configs);
     }
+    
+    @PostMapping("/send-reset-code")
+    public CommonResponse sendResetCode(@RequestBody SendResetCodeRequest request) {
+        logger.info("收到发送密码重置验证码请求：邮箱 {}", request.getEmail());
+        
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            logger.warn("发送密码重置验证码失败：邮箱为空");
+            return new CommonResponse(false, "邮箱不能为空");
+        }
+        
+        boolean success = emailService.sendVerificationCode(request.getEmail().trim(), "修改");
+        
+        if (success) {
+            logger.info("密码重置验证码发送成功：邮箱 {}", request.getEmail());
+            return new CommonResponse(true, "密码重置验证码发送成功");
+        } else {
+            logger.warn("密码重置验证码发送失败：邮箱 {}", request.getEmail());
+            return new CommonResponse(false, "密码重置验证码发送失败，请稍后重试");
+        }
+    }
+    
+    @PostMapping("/reset-password")
+    public CommonResponse resetPassword(@RequestBody ResetPasswordRequest request) {
+        logger.info("收到重置密码请求：邮箱 {}", request.getEmail());
+        
+        CommonResponse response = authService.resetPassword(request);
+        
+        if (response.getSuccess()) {
+            logger.info("重置密码请求处理成功：邮箱 {}", request.getEmail());
+        } else {
+            logger.warn("重置密码请求处理失败：邮箱 {}，原因：{}", request.getEmail(), response.getMessage());
+        }
+        
+        return response;
+    }
 }
