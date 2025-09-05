@@ -10,6 +10,8 @@
 | [用户登出](#用户登出) | POST | `/api/auth/logout` | 用户退出登录并删除Token |
 | [Token验证](#token验证) | POST | `/api/auth/validate-token` | 验证Token有效性并获取用户信息 |
 | [获取系统配置](#获取系统配置) | POST | `/api/auth/configs` | 获取所有系统配置（管理员专用） |
+| [获取公开配置](#获取公开配置) | POST | `/api/config/public` | 获取状态为"公开"的配置项 |
+| [根据Key获取公开配置](#根据key获取公开配置) | POST | `/api/config/public/by-key` | 根据配置键获取单个公开配置项 |
 
 ---
 
@@ -312,5 +314,114 @@
 - 返回所有配置项，包括公开和私人配置
 - 包含敏感配置信息，请注意安全性
 - 管理员Token必须有效且用户状态为"正常"
+
+[返回顶部](#接口汇总)
+
+## 配置接口
+
+### 获取公开配置
+**接口地址**: `POST /api/config/public`
+
+**请求示例**:
+```json
+{}
+```
+
+**请求字段说明**:
+- 该接口无需任何参数，直接发送空的JSON对象即可
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "获取公开配置成功",
+  "configs": [
+    {
+      "id": 1,
+      "configKey": "site_name",
+      "description": "网站名称",
+      "configValue": "我的博客系统",
+      "status": "公开"
+    },
+    {
+      "id": 2,
+      "configKey": "site_description",
+      "description": "网站描述",
+      "configValue": "一个基于Spring Boot的博客系统",
+      "status": "公开"
+    }
+  ]
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "未找到公开配置项"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 无需Token验证，任何用户都可以访问
+- 仅返回状态为"公开"的配置项
+- 不会暴露私人配置信息
+- 适合前端获取系统基础配置
+
+[返回顶部](#接口汇总)
+
+### 根据Key获取公开配置
+**接口地址**: `POST /api/config/public/by-key`
+
+**请求示例**:
+```json
+{
+  "configKey": "site_name"
+}
+```
+
+**请求字段说明**:
+- `configKey` (必填): 配置项的键值
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "获取配置成功",
+  "config": {
+    "id": 9,
+    "configKey": "site_name",
+    "description": "网站名称",
+    "configValue": "个人博客系统",
+    "status": "公开"
+  }
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "配置项不存在或不是公开状态"
+}
+```
+
+**配置键为空返回示例**:
+```json
+{
+  "success": false,
+  "message": "配置键不能为空"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 无需Token验证，任何用户都可以访问
+- 仅返回状态为"公开"的配置项
+- 如果配置项不存在或状态为"私人"，将返回失败
+- 适合前端获取特定的系统配置
 
 [返回顶部](#接口汇总)

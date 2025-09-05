@@ -60,4 +60,14 @@ INSERT INTO `config` (`config_key`, `description`, `config_value`, `status`) VAL
 ('email_host', '邮件服务器地址', 'smtp.example.com', '私人'),
 ('email_port', '邮件服务器端口', '587', '私人'),
 ('register_email_subject', '发送注册验证码标题', '【博客系统】邮箱验证码', '私人'),
-('register_email_content', '注册验证码内容', '您的邮箱验证码是：{code}\n\n验证码有效期为5分钟，请及时使用。\n如果这不是您的操作，请忽略此邮件。\n\n此邮件由系统自动发送，请勿回复。', '私人');
+('register_email_content', '注册验证码内容', '您的邮箱验证码是：{code}\n\n验证码有效期为5分钟，请及时使用。\n如果这不是您的操作，请忽略此邮件。\n\n此邮件由系统自动发送，请勿回复。', '私人'),
+
+-- 网站基本配置（公开）
+('site_title', '网站标题', '我的个人博客', '公开'),
+('site_favicon', '网站图标', '/images/favicon.ico', '公开'),
+('site_background', '网站背景', '/images/background.jpg', '公开'),
+('site_name', '网站名称', '个人博客系统', '公开'),
+('site_avatar', '网站头像', '/images/avatar.png', '公开'),
+('site_logo', '网站logo', '/images/logo.png', '公开'),
+('site_footer', '网站页脚', 'Copyright © 2025 我的博客. All rights reserved.', '公开'),
+('site_icp', '网站备案号', '京ICP备XXXXXXXX号-1', '公开');

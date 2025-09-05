@@ -98,6 +98,39 @@ public class ConfigService {
     }
 
     /**
+     * 获取公开配置列表
+     */
+    public List<Config> getPublicConfigs() {
+        try {
+            List<Config> publicConfigs = configRepository.findPublicConfigs();
+            logger.info("获取公开配置成功，共 {} 条", publicConfigs.size());
+            return publicConfigs;
+        } catch (Exception e) {
+            logger.error("获取公开配置异常：{}", e.getMessage(), e);
+            return List.of();
+        }
+    }
+
+    /**
+     * 根据配置键获取公开配置
+     */
+    public Config getPublicConfigByKey(String configKey) {
+        try {
+            Optional<Config> configOpt = configRepository.findPublicConfigByKey(configKey);
+            if (configOpt.isPresent()) {
+                logger.info("获取公开配置成功：{}", configKey);
+                return configOpt.get();
+            } else {
+                logger.warn("公开配置项不存在：{}", configKey);
+                return null;
+            }
+        } catch (Exception e) {
+            logger.error("获取公开配置异常：{}，错误信息：{}", configKey, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
      * 邮件配置类
      */
     public static class EmailConfig {

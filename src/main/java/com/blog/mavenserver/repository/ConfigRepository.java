@@ -25,5 +25,8 @@ public interface ConfigRepository extends JpaRepository<Config, Long> {
     @Query("SELECT c FROM Config c WHERE c.status = '私人'")
     List<Config> findPrivateConfigs();
     
+    @Query("SELECT c FROM Config c WHERE c.configKey = :configKey AND c.status = '公开'")
+    Optional<Config> findPublicConfigByKey(@Param("configKey") String configKey);
+    
     boolean existsByConfigKey(String configKey);
 }
