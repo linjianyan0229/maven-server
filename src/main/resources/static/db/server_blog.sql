@@ -35,11 +35,13 @@ CREATE TABLE `verification_code` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '验证码ID',
   `email` varchar(100) NOT NULL COMMENT '邮箱',
   `code` varchar(6) NOT NULL COMMENT '六位数字验证码',
+  `type` varchar(10) NOT NULL DEFAULT '注册' COMMENT '验证码类型：注册/修改',
   `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `expire_time` datetime NOT NULL COMMENT '过期时间',
   PRIMARY KEY (`id`),
   KEY `idx_email` (`email`),
-  KEY `idx_expire_time` (`expire_time`)
+  KEY `idx_expire_time` (`expire_time`),
+  KEY `idx_type` (`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邮箱验证码表';
 
 -- 配置项表
@@ -55,12 +57,15 @@ CREATE TABLE `config` (
 
 -- 插入配置项数据
 INSERT INTO `config` (`config_key`, `description`, `config_value`, `status`) VALUES
+-- 邮件相关配置（私人）
 ('email_account', '邮箱账号', 'your-email@example.com', '私人'),
 ('email_password', '邮箱账号授权码', 'your-email-password', '私人'),
 ('email_host', '邮件服务器地址', 'smtp.example.com', '私人'),
 ('email_port', '邮件服务器端口', '587', '私人'),
 ('register_email_subject', '发送注册验证码标题', '【博客系统】邮箱验证码', '私人'),
 ('register_email_content', '注册验证码内容', '您的邮箱验证码是：{code}\n\n验证码有效期为5分钟，请及时使用。\n如果这不是您的操作，请忽略此邮件。\n\n此邮件由系统自动发送，请勿回复。', '私人'),
+('reset_password_email_subject', '发送修改密码验证码标题', '【博客系统】密码重置验证码', '私人'),
+('reset_password_email_content', '修改验证码邮件内容', '您的密码重置验证码是：{code}\n\n验证码有效期为5分钟，请及时使用。\n如果这不是您的操作，请忽略此邮件。\n\n此邮件由系统自动发送，请勿回复。', '私人'),
 
 -- 网站基本配置（公开）
 ('site_title', '网站标题', '我的个人博客', '公开'),

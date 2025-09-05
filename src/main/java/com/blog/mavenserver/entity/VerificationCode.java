@@ -17,6 +17,9 @@ public class VerificationCode {
     @Column(nullable = false, length = 6)
     private String code;
     
+    @Column(nullable = false, length = 10, columnDefinition = "varchar(10) default '注册'")
+    private String type;
+    
     @Column(name = "created_time", columnDefinition = "datetime default CURRENT_TIMESTAMP")
     private LocalDateTime createdTime;
     
@@ -26,11 +29,17 @@ public class VerificationCode {
     // 构造函数
     public VerificationCode() {}
     
-    public VerificationCode(String email, String code, LocalDateTime expireTime) {
+    public VerificationCode(String email, String code, String type, LocalDateTime expireTime) {
         this.email = email;
         this.code = code;
+        this.type = type;
         this.expireTime = expireTime;
         this.createdTime = LocalDateTime.now();
+    }
+    
+    // 兼容旧版本的构造函数（默认为注册类型）
+    public VerificationCode(String email, String code, LocalDateTime expireTime) {
+        this(email, code, "注册", expireTime);
     }
 
     // Getter 和 Setter 方法
@@ -56,6 +65,14 @@ public class VerificationCode {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public LocalDateTime getCreatedTime() {

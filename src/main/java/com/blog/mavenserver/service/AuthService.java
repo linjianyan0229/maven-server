@@ -79,8 +79,8 @@ public class AuthService {
                 return new CommonResponse(false, "该邮箱已被注册");
             }
 
-            // 验证验证码
-            if (!emailService.verifyCode(request.getEmail().trim(), request.getCode().trim())) {
+            // 验证验证码（注册类型）
+            if (!emailService.verifyCode(request.getEmail().trim(), request.getCode().trim(), "注册")) {
                 logger.warn("注册失败：验证码错误或已过期，邮箱：{}", request.getEmail());
                 return new CommonResponse(false, "验证码错误或已过期");
             }
