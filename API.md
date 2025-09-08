@@ -13,6 +13,8 @@
 | [发送重置密码验证码](#发送重置密码验证码) | POST | `/api/auth/send-reset-code` | 向指定邮箱发送密码重置验证码 |
 | [重置密码](#重置密码) | POST | `/api/auth/reset-password` | 通过邮箱验证码重置密码 |
 | [获取访问统计列表](#获取访问统计列表) | POST | `/api/auth/access-stats-list` | 获取所有IP访问统计列表（管理员专用） |
+| [获取个人信息](#获取个人信息) | POST | `/api/auth/profile` | 获取当前用户的个人信息 |
+| [修改个人信息](#修改个人信息) | POST | `/api/auth/update-profile` | 修改当前用户的个人信息 |
 | [获取公开配置](#获取公开配置) | POST | `/api/config/public` | 获取状态为"公开"的配置项 |
 | [根据Key获取公开配置](#根据key获取公开配置) | POST | `/api/config/public/by-key` | 根据配置键获取单个公开配置项 |
 | [获取访问统计](#获取访问统计) | POST | `/api/config/public/access-stats` | 获取访问者IP、今日访问量和该IP的总访问量 |
@@ -480,6 +482,141 @@
 - visitCount表示该IP今日的访问次数
 - totalCount表示该IP的历史总访问次数
 - 管理员Token必须有效且用户状态为"正常"
+
+[返回顶部](#接口汇总)
+
+### 获取个人信息
+**接口地址**: `POST /api/auth/profile`
+
+**请求示例**:
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+}
+```
+
+**请求字段说明**:
+- `token` (必填): 用户的登录Token
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "获取个人信息成功",
+  "userProfile": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@example.com",
+    "avatar": "/images/avatar.png",
+    "sex": 1,
+    "bio": "这是我的个人介绍",
+    "role": "ADMIN",
+    "status": "正常",
+    "createdTime": "2025-01-10T10:30:45",
+    "loginTime": "2025-01-15T16:22:30"
+  }
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "Token无效或已过期"
+}
+```
+
+**Token为空返回示例**:
+```json
+{
+  "success": false,
+  "message": "Token不能为空"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 需要有效的用户Token，任何已登录用户都可以访问自己的个人信息
+- 返回信息不包含密码字段，确保账户安全
+- sex字段：0-未知，1-男，2-女
+- role字段：USER-普通用户，ADMIN-管理员
+- status字段：正常/异常/无效
+- 用户状态必须为"正常"才能获取个人信息
+- Token过期时会自动删除该Token
+
+[返回顶部](#接口汇总)
+
+### 修改个人信息
+**接口地址**: `POST /api/auth/update-profile`
+
+**请求示例**:
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+  "username": "newusername",
+  "avatar": "/images/new-avatar.png",
+  "sex": 1,
+  "bio": "这是我更新后的个人介绍"
+}
+```
+
+**请求字段说明**:
+- `token` (必填): 用户的登录Token
+- `username` (选填): 新用户名，长度2-50个字符
+- `avatar` (选填): 头像URL，可以为空
+- `sex` (选填): 性别，0-未知，1-男，2-女
+- `bio` (选填): 个人介绍，最大500个字符
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "修改个人信息成功",
+  "userProfile": {
+    "id": 1,
+    "username": "newusername",
+    "email": "admin@example.com",
+    "avatar": "/images/new-avatar.png",
+    "sex": 1,
+    "bio": "这是我更新后的个人介绍",
+    "role": "ADMIN",
+    "status": "正常",
+    "createdTime": "2025-01-10T10:30:45",
+    "loginTime": "2025-01-15T16:22:30"
+  }
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "用户名已被使用"
+}
+```
+
+**Token无效返回示例**:
+```json
+{
+  "success": false,
+  "message": "Token无效或已过期"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 需要有效的用户Token，任何已登录用户都可以修改自己的个人信息
+- 所有字段都是可选的，只传入需要修改的字段即可
+- 用户名必须唯一，不能与其他用户重复
+- 用户名长度必须在2-50个字符之间
+- 性别值只能是0、1、2，其他值会报错
+- 个人介绍最大长度为500个字符
+- 头像和个人介绍可以传入空字符串来清空
+- 用户状态必须为"正常"才能修改个人信息
+- 修改成功后返回更新后的完整用户信息
+- 邮箱、角色、状态等字段不能通过此接口修改
 
 [返回顶部](#接口汇总)
 

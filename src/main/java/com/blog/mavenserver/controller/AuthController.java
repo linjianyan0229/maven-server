@@ -196,4 +196,34 @@ public class AuthController {
             return new AccessStatsListResponse(false, "获取访问统计列表失败");
         }
     }
+    
+    @PostMapping("/profile")
+    public UserProfileResponse getUserProfile(@RequestBody UserProfileRequest request) {
+        logger.info("收到获取个人信息请求");
+        
+        UserProfileResponse response = authService.getUserProfile(request);
+        
+        if (response.getSuccess()) {
+            logger.info("获取个人信息请求处理成功");
+        } else {
+            logger.warn("获取个人信息请求处理失败：{}", response.getMessage());
+        }
+        
+        return response;
+    }
+    
+    @PostMapping("/update-profile")
+    public UpdateProfileResponse updateUserProfile(@RequestBody UpdateProfileRequest request) {
+        logger.info("收到修改个人信息请求");
+        
+        UpdateProfileResponse response = authService.updateUserProfile(request);
+        
+        if (response.getSuccess()) {
+            logger.info("修改个人信息请求处理成功");
+        } else {
+            logger.warn("修改个人信息请求处理失败：{}", response.getMessage());
+        }
+        
+        return response;
+    }
 }

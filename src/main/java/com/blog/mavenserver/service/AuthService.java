@@ -1,12 +1,6 @@
 package com.blog.mavenserver.service;
 
-import com.blog.mavenserver.dto.CommonResponse;
-import com.blog.mavenserver.dto.LoginRequest;
-import com.blog.mavenserver.dto.LoginResponse;
-import com.blog.mavenserver.dto.RegisterRequest;
-import com.blog.mavenserver.dto.ResetPasswordRequest;
-import com.blog.mavenserver.dto.TokenValidateRequest;
-import com.blog.mavenserver.dto.TokenValidateResponse;
+import com.blog.mavenserver.dto.*;
 import com.blog.mavenserver.entity.Token;
 import com.blog.mavenserver.entity.User;
 import com.blog.mavenserver.repository.TokenRepository;
@@ -381,6 +375,177 @@ public class AuthService {
         } catch (Exception e) {
             logger.error("密码重置异常：邮箱 {}，错误信息：{}", request.getEmail(), e.getMessage(), e);
             return new CommonResponse(false, "密码重置失败，请稍后重试");
+        }
+    }
+    
+    public UserProfileResponse getUserProfile(UserProfileRequest request) {
+        try {
+            if (request.getToken() == null || request.getToken().trim().isEmpty()) {
+                logger.warn("获取个人信息失败：Token为空");
+                return new UserProfileResponse(false, "Token不能为空");
+            }
+            
+            // 验证Token并获取用户
+            Optional<Token> tokenOpt = tokenRepository.findByToken(request.getToken().trim());
+            if (!tokenOpt.isPresent()) {
+                logger.warn("获取个人信息失败：Token无效");
+                return new UserProfileResponse(false, "Token无效");
+            }
+            
+            Token token = tokenOpt.get();
+            
+            // 检查Token是否过期
+            if (token.getExpireTime().isBefore(LocalDateTime.now())) {
+                logger.warn("获取个人信息失败：Token已过期");
+                // 删除过期Token
+                tokenRepository.delete(token);
+                return new UserProfileResponse(false, "Token已过期");
+            }
+            
+            // 获取用户信息
+            Optional<User> userOpt = userRepository.findById(token.getUserId());
+            if (!userOpt.isPresent()) {
+                logger.warn("获取个人信息失败：用户不存在，用户ID：{}", token.getUserId());
+                return new UserProfileResponse(false, "用户不存在");
+            }
+            
+            User user = userOpt.get();
+            
+            // 检查用户状态
+            if (!"正常".equals(user.getStatus())) {
+                logger.warn("获取个人信息失败：用户状态异常，用户：{}，状态：{}", user.getUsername(), user.getStatus());
+                return new UserProfileResponse(false, "账户状态异常");
+            }
+            
+            // 构建用户信息（不包含密码）
+            UserProfileInfo userProfile = new UserProfileInfo(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getAvatar(),
+                user.getSex(),
+                user.getBio(),
+                user.getRole(),
+                user.getStatus(),
+                user.getCreatedTime(),
+                user.getLoginTime()
+            );
+            
+            logger.info("获取个人信息成功：用户 {}", user.getUsername());
+            return new UserProfileResponse(true, "获取个人信息成功", userProfile);
+            
+        } catch (Exception e) {
+            logger.error("获取个人信息异常：{}", e.getMessage(), e);
+            return new UserProfileResponse(false, "获取个人信息失败，请稍后重试");
+        }
+    }
+    
+    public UpdateProfileResponse updateUserProfile(UpdateProfileRequest request) {
+        try {
+            if (request.getToken() == null || request.getToken().trim().isEmpty()) {
+                logger.warn("修改个人信息失败：Token为空");
+                return new UpdateProfileResponse(false, "Token不能为空");
+            }
+            
+            // 验证Token并获取用户
+            Optional<Token> tokenOpt = tokenRepository.findByToken(request.getToken().trim());
+            if (!tokenOpt.isPresent()) {
+                logger.warn("修改个人信息失败：Token无效");
+                return new UpdateProfileResponse(false, "Token无效");
+            }
+            
+            Token token = tokenOpt.get();
+            
+            // 检查Token是否过期
+            if (token.getExpireTime().isBefore(LocalDateTime.now())) {
+                logger.warn("修改个人信息失败：Token已过期");
+                // 删除过期Token
+                tokenRepository.delete(token);
+                return new UpdateProfileResponse(false, "Token已过期");
+            }
+            
+            // 获取用户信息
+            Optional<User> userOpt = userRepository.findById(token.getUserId());
+            if (!userOpt.isPresent()) {
+                logger.warn("修改个人信息失败：用户不存在，用户ID：{}", token.getUserId());
+                return new UpdateProfileResponse(false, "用户不存在");
+            }
+            
+            User user = userOpt.get();
+            
+            // 检查用户状态
+            if (!"正常".equals(user.getStatus())) {
+                logger.warn("修改个人信息失败：用户状态异常，用户：{}，状态：{}", user.getUsername(), user.getStatus());
+                return new UpdateProfileResponse(false, "账户状态异常");
+            }
+            
+            // 验证用户名
+            if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+                String newUsername = request.getUsername().trim();
+                
+                // 检查用户名长度
+                if (newUsername.length() < 2 || newUsername.length() > 50) {
+                    logger.warn("修改个人信息失败：用户名长度不符合要求，用户：{}，新用户名：{}", user.getUsername(), newUsername);
+                    return new UpdateProfileResponse(false, "用户名长度必须在2-50个字符之间");
+                }
+                
+                // 检查用户名是否已被使用（排除自己）
+                Optional<User> existingUser = userRepository.findByUsername(newUsername);
+                if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+                    logger.warn("修改个人信息失败：用户名已存在，用户：{}，新用户名：{}", user.getUsername(), newUsername);
+                    return new UpdateProfileResponse(false, "用户名已被使用");
+                }
+                
+                user.setUsername(newUsername);
+            }
+            
+            // 验证性别
+            if (request.getSex() != null) {
+                if (request.getSex() < 0 || request.getSex() > 2) {
+                    logger.warn("修改个人信息失败：性别值无效，用户：{}，性别值：{}", user.getUsername(), request.getSex());
+                    return new UpdateProfileResponse(false, "性别值无效，只能是0（未知）、1（男）、2（女）");
+                }
+                user.setSex(request.getSex());
+            }
+            
+            // 更新头像
+            if (request.getAvatar() != null) {
+                user.setAvatar(request.getAvatar().trim().isEmpty() ? null : request.getAvatar().trim());
+            }
+            
+            // 更新个人介绍
+            if (request.getBio() != null) {
+                String bio = request.getBio().trim();
+                if (bio.length() > 500) {
+                    logger.warn("修改个人信息失败：个人介绍过长，用户：{}，长度：{}", user.getUsername(), bio.length());
+                    return new UpdateProfileResponse(false, "个人介绍不能超过500个字符");
+                }
+                user.setBio(bio.isEmpty() ? null : bio);
+            }
+            
+            // 保存用户信息
+            userRepository.save(user);
+            
+            // 构建更新后的用户信息
+            UserProfileInfo userProfile = new UserProfileInfo(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getAvatar(),
+                user.getSex(),
+                user.getBio(),
+                user.getRole(),
+                user.getStatus(),
+                user.getCreatedTime(),
+                user.getLoginTime()
+            );
+            
+            logger.info("修改个人信息成功：用户 {}", user.getUsername());
+            return new UpdateProfileResponse(true, "修改个人信息成功", userProfile);
+            
+        } catch (Exception e) {
+            logger.error("修改个人信息异常：{}", e.getMessage(), e);
+            return new UpdateProfileResponse(false, "修改个人信息失败，请稍后重试");
         }
     }
 }
