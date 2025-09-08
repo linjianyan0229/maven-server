@@ -55,6 +55,32 @@ CREATE TABLE `config` (
   UNIQUE KEY `uk_config_key` (`config_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
 
+-- 访问统计表
+CREATE TABLE `access_stats` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '统计ID',
+  `ip` varchar(45) NOT NULL COMMENT 'IP地址',
+  `visit_count` int DEFAULT 0 COMMENT '访问次数',
+  `total_count` int DEFAULT 0 COMMENT '总次数',
+  `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ip` (`ip`),
+  KEY `idx_visit_count` (`visit_count`),
+  KEY `idx_total_count` (`total_count`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='IP访问统计表';
+
+-- 总访问次数表
+CREATE TABLE `total_access_stats` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `total_count` bigint DEFAULT 0 COMMENT '总访问次数',
+  `today_count` bigint DEFAULT 0 COMMENT '今日总访问次数',
+  `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='总访问次数统计表';
+
+-- 初始化总访问次数记录
+INSERT INTO `total_access_stats` (`total_count`, `today_count`) VALUES (0, 0);
+
 -- 插入配置项数据
 INSERT INTO `config` (`config_key`, `description`, `config_value`, `status`) VALUES
 -- 邮件相关配置（私人）

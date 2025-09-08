@@ -14,6 +14,8 @@
 | [重置密码](#重置密码) | POST | `/api/auth/reset-password` | 通过邮箱验证码重置密码 |
 | [获取公开配置](#获取公开配置) | POST | `/api/config/public` | 获取状态为"公开"的配置项 |
 | [根据Key获取公开配置](#根据key获取公开配置) | POST | `/api/config/public/by-key` | 根据配置键获取单个公开配置项 |
+| [获取访问统计](#获取访问统计) | POST | `/api/config/public/access-stats` | 获取访问者IP、今日访问量和该IP的总访问量 |
+| [获取总统计](#获取总统计) | POST | `/api/config/public/total-stats` | 获取全站总访问次数和今日总访问次数 |
 
 ---
 
@@ -516,5 +518,89 @@
 - 仅返回状态为"公开"的配置项
 - 如果配置项不存在或状态为"私人"，将返回失败
 - 适合前端获取特定的系统配置
+
+[返回顶部](#接口汇总)
+
+## 统计接口
+
+### 获取访问统计
+**接口地址**: `POST /api/config/public/access-stats`
+
+**请求示例**:
+```json
+{}
+```
+
+**请求字段说明**:
+- 该接口无需任何参数，直接发送空的JSON对象即可
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "获取访问统计成功",
+  "ip": "192.168.1.100",
+  "todayVisits": 25,
+  "ipTotalVisits": 156
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "获取访问统计失败"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 无需Token验证，任何用户都可以访问
+- 每次调用接口会自动记录一次访问
+- 自动识别客户端真实IP（支持代理服务器）
+- todayVisits表示今日全站访问量
+- ipTotalVisits表示当前IP的历史总访问量
+- 支持IPv4和IPv6地址格式
+
+[返回顶部](#接口汇总)
+
+### 获取总统计
+**接口地址**: `POST /api/config/public/total-stats`
+
+**请求示例**:
+```json
+{}
+```
+
+**请求字段说明**:
+- 该接口无需任何参数，直接发送空的JSON对象即可
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "获取总统计成功",
+  "totalVisits": 15847,
+  "todayTotalVisits": 523
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "获取总统计失败"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 无需Token验证，任何用户都可以访问
+- totalVisits表示全站历史总访问次数（所有IP的总次数相加）
+- todayTotalVisits表示今日全站总访问次数（今日所有IP访问次数相加）
+- 数据基于数据库中的统计表实时计算
+- 不会记录访问，仅获取统计数据
 
 [返回顶部](#接口汇总)
