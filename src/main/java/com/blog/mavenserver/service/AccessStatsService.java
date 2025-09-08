@@ -1,5 +1,6 @@
 package com.blog.mavenserver.service;
 
+import com.blog.mavenserver.dto.AccessStatsItem;
 import com.blog.mavenserver.entity.AccessStats;
 import com.blog.mavenserver.entity.TotalAccessStats;
 import com.blog.mavenserver.repository.AccessStatsRepository;
@@ -7,12 +8,15 @@ import com.blog.mavenserver.repository.TotalAccessStatsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -93,6 +97,39 @@ public class AccessStatsService {
             return totalStats.map(TotalAccessStats::getTodayCount).orElse(0L);
         } catch (Exception e) {
             logger.error("获取今日总访问量失败：{}", e.getMessage(), e);
+            return 0L;
+        }
+    }
+    
+    public List<AccessStatsItem> getAllAccessStatsList() {
+        try {
+            // 按总访问次数降序排列
+            List<AccessStats> accessStatsList = accessStatsRepository.findAll(
+                Sort.by(Sort.Direction.DESC, "totalCount")
+            );
+            
+            return accessStatsList.stream()
+                .map(stats -> new AccessStatsItem(
+                    stats.getId(),
+                    stats.getIp(),
+                    stats.getVisitCount(),
+                    stats.getTotalCount(),
+                    stats.getCreatedTime(),
+                    stats.getUpdatedTime()
+                ))
+                .collect(Collectors.toList());
+                
+        } catch (Exception e) {
+            logger.error("获取访问统计列表失败：{}", e.getMessage(), e);
+            return List.of();
+        }
+    }
+    
+    public Long getTotalIpCount() {
+        try {
+            return accessStatsRepository.count();
+        } catch (Exception e) {
+            logger.error("获取总IP数量失败：{}", e.getMessage(), e);
             return 0L;
         }
     }

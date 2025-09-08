@@ -4,10 +4,13 @@ import com.blog.mavenserver.dto.*;
 import com.blog.mavenserver.service.AuthService;
 import com.blog.mavenserver.service.ConfigService;
 import com.blog.mavenserver.service.EmailService;
+import com.blog.mavenserver.service.AccessStatsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,6 +26,9 @@ public class AuthController {
     
     @Autowired
     private ConfigService configService;
+    
+    @Autowired
+    private AccessStatsService accessStatsService;
 
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request) {
@@ -158,5 +164,36 @@ public class AuthController {
         }
         
         return response;
+    }
+    
+    @PostMapping("/access-stats-list")
+    public AccessStatsListResponse getAccessStatsList(@RequestBody AccessStatsListRequest request) {
+        logger.info("收到获取访问统计列表请求");
+        
+        // 验证管理员权限
+        if (!authService.isAdminUser(request.getToken())) {
+            logger.warn("获取访问统计列表失败：权限不足");
+            return new AccessStatsListResponse(false, "权限不足，仅管理员可访问");
+        }
+        
+        try {
+            // 获取所有访问统计列表
+            List<AccessStatsItem> accessStatsList = accessStatsService.getAllAccessStatsList();
+            
+            // 获取总访问次数
+            Long totalCount = accessStatsService.getTotalVisitCount();
+            
+            // 获取总IP数量
+            Long totalIpCount = accessStatsService.getTotalIpCount();
+            
+            logger.info("获取访问统计列表成功：共 {} 个IP，总访问量 {}", totalIpCount, totalCount);
+            
+            return new AccessStatsListResponse(true, "获取访问统计列表成功", 
+                                             accessStatsList, totalCount, totalIpCount);
+            
+        } catch (Exception e) {
+            logger.error("获取访问统计列表失败：{}", e.getMessage(), e);
+            return new AccessStatsListResponse(false, "获取访问统计列表失败");
+        }
     }
 }

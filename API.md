@@ -12,6 +12,7 @@
 | [获取系统配置](#获取系统配置) | POST | `/api/auth/configs` | 获取所有系统配置（管理员专用） |
 | [发送重置密码验证码](#发送重置密码验证码) | POST | `/api/auth/send-reset-code` | 向指定邮箱发送密码重置验证码 |
 | [重置密码](#重置密码) | POST | `/api/auth/reset-password` | 通过邮箱验证码重置密码 |
+| [获取访问统计列表](#获取访问统计列表) | POST | `/api/auth/access-stats-list` | 获取所有IP访问统计列表（管理员专用） |
 | [获取公开配置](#获取公开配置) | POST | `/api/config/public` | 获取状态为"公开"的配置项 |
 | [根据Key获取公开配置](#根据key获取公开配置) | POST | `/api/config/public/by-key` | 根据配置键获取单个公开配置项 |
 | [获取访问统计](#获取访问统计) | POST | `/api/config/public/access-stats` | 获取访问者IP、今日访问量和该IP的总访问量 |
@@ -409,6 +410,76 @@
 - 验证码类型必须为"修改"类型，不能使用注册类型验证码
 - 密码重置成功后会清除该用户的所有Token，需要重新登录
 - 用户状态必须为"正常"才能重置密码
+
+[返回顶部](#接口汇总)
+
+### 获取访问统计列表
+**接口地址**: `POST /api/auth/access-stats-list`
+
+**请求示例**:
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+}
+```
+
+**请求字段说明**:
+- `token` (必填): 管理员用户的Token
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "获取访问统计列表成功",
+  "totalCount": 15847,
+  "totalIpCount": 142,
+  "accessStatsList": [
+    {
+      "id": 1,
+      "ip": "192.168.1.100",
+      "visitCount": 25,
+      "totalCount": 156,
+      "createdTime": "2025-01-15T09:30:45",
+      "updatedTime": "2025-01-15T16:22:30"
+    },
+    {
+      "id": 2,
+      "ip": "127.0.0.1",
+      "visitCount": 12,
+      "totalCount": 89,
+      "createdTime": "2025-01-14T10:15:20",
+      "updatedTime": "2025-01-15T15:45:12"
+    }
+  ]
+}
+```
+
+**权限不足返回示例**:
+```json
+{
+  "success": false,
+  "message": "权限不足，仅管理员可访问"
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "获取访问统计列表失败"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 仅限管理员角色访问，普通用户会被拒绝
+- 返回所有IP的访问统计信息，按总访问次数降序排列
+- totalCount表示全站总访问次数
+- totalIpCount表示访问过网站的不同IP总数
+- visitCount表示该IP今日的访问次数
+- totalCount表示该IP的历史总访问次数
+- 管理员Token必须有效且用户状态为"正常"
 
 [返回顶部](#接口汇总)
 
