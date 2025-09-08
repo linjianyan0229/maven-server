@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -546,6 +548,109 @@ public class AuthService {
         } catch (Exception e) {
             logger.error("修改个人信息异常：{}", e.getMessage(), e);
             return new UpdateProfileResponse(false, "修改个人信息失败，请稍后重试");
+        }
+    }
+    
+    public UserListResponse getUserList(UserListRequest request) {
+        try {
+            if (request.getToken() == null || request.getToken().trim().isEmpty()) {
+                logger.warn("获取用户列表失败：Token为空");
+                return new UserListResponse(false, "Token不能为空");
+            }
+            
+            // 验证管理员权限
+            if (!isAdminUser(request.getToken())) {
+                logger.warn("获取用户列表失败：权限不足");
+                return new UserListResponse(false, "权限不足，仅管理员可访问");
+            }
+            
+            // 获取所有用户列表
+            List<User> users = userRepository.findAll();
+            
+            // 转换为UserInfo列表（不包含密码信息）
+            List<UserInfo> userInfoList = users.stream()
+                .map(user -> new UserInfo(
+                    user.getId(),
+                    user.getUsername(), 
+                    user.getEmail(),
+                    user.getAvatar(),
+                    user.getSex(),
+                    user.getBio(),
+                    user.getRole(),
+                    user.getStatus(),
+                    user.getCreatedTime(),
+                    user.getLoginTime()
+                ))
+                .collect(Collectors.toList());
+            
+            long totalCount = users.size();
+            
+            logger.info("获取用户列表成功：共 {} 名用户", totalCount);
+            return new UserListResponse(true, "获取用户列表成功", userInfoList, totalCount);
+            
+        } catch (Exception e) {
+            logger.error("获取用户列表异常：{}", e.getMessage(), e);
+            return new UserListResponse(false, "获取用户列表失败，请稍后重试");
+        }
+    }
+    
+    public CommonResponse deleteUser(DeleteUserRequest request) {
+        try {
+            if (request.getToken() == null || request.getToken().trim().isEmpty()) {
+                logger.warn("删除用户失败：Token为空");
+                return new CommonResponse(false, "Token不能为空");
+            }
+            
+            if (request.getUserId() == null) {
+                logger.warn("删除用户失败：用户ID为空");
+                return new CommonResponse(false, "用户ID不能为空");
+            }
+            
+            // 验证管理员权限
+            if (!isAdminUser(request.getToken())) {
+                logger.warn("删除用户失败：权限不足");
+                return new CommonResponse(false, "权限不足，仅管理员可访问");
+            }
+            
+            // 检查要删除的用户是否存在
+            Optional<User> userOpt = userRepository.findById(request.getUserId());
+            if (!userOpt.isPresent()) {
+                logger.warn("删除用户失败：用户不存在，用户ID：{}", request.getUserId());
+                return new CommonResponse(false, "用户不存在");
+            }
+            
+            User userToDelete = userOpt.get();
+            
+            // 检查是否尝试删除自己
+            Optional<User> adminUserOpt = getUserByToken(request.getToken());
+            if (adminUserOpt.isPresent() && adminUserOpt.get().getId().equals(request.getUserId())) {
+                logger.warn("删除用户失败：不能删除自己，管理员用户：{}，尝试删除用户ID：{}", 
+                    adminUserOpt.get().getUsername(), request.getUserId());
+                return new CommonResponse(false, "不能删除自己的账户");
+            }
+            
+            // 检查是否是唯一的管理员账户
+            if ("ADMIN".equals(userToDelete.getRole())) {
+                List<User> adminUsers = userRepository.findByRole("ADMIN");
+                if (adminUsers.size() <= 1) {
+                    logger.warn("删除用户失败：不能删除唯一的管理员账户，用户：{}", userToDelete.getUsername());
+                    return new CommonResponse(false, "不能删除唯一的管理员账户");
+                }
+            }
+            
+            // 删除用户相关的Token（级联删除会自动处理）
+            tokenRepository.deleteByUserId(request.getUserId());
+            
+            // 删除用户
+            userRepository.delete(userToDelete);
+            
+            logger.info("删除用户成功：用户ID {}，用户名 {}，邮箱 {}", 
+                userToDelete.getId(), userToDelete.getUsername(), userToDelete.getEmail());
+            return new CommonResponse(true, "用户删除成功");
+            
+        } catch (Exception e) {
+            logger.error("删除用户异常：{}", e.getMessage(), e);
+            return new CommonResponse(false, "删除用户失败，请稍后重试");
         }
     }
 }

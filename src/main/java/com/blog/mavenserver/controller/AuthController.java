@@ -226,4 +226,34 @@ public class AuthController {
         
         return response;
     }
+    
+    @PostMapping("/user-list")
+    public UserListResponse getUserList(@RequestBody UserListRequest request) {
+        logger.info("收到获取用户列表请求");
+        
+        UserListResponse response = authService.getUserList(request);
+        
+        if (response.getSuccess()) {
+            logger.info("获取用户列表请求处理成功：共 {} 名用户", response.getTotalCount());
+        } else {
+            logger.warn("获取用户列表请求处理失败：{}", response.getMessage());
+        }
+        
+        return response;
+    }
+    
+    @PostMapping("/delete-user")
+    public CommonResponse deleteUser(@RequestBody DeleteUserRequest request) {
+        logger.info("收到删除用户请求：用户ID {}", request.getUserId());
+        
+        CommonResponse response = authService.deleteUser(request);
+        
+        if (response.getSuccess()) {
+            logger.info("删除用户请求处理成功：用户ID {}", request.getUserId());
+        } else {
+            logger.warn("删除用户请求处理失败：用户ID {}，原因：{}", request.getUserId(), response.getMessage());
+        }
+        
+        return response;
+    }
 }

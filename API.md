@@ -13,6 +13,8 @@
 | [发送重置密码验证码](#发送重置密码验证码) | POST | `/api/auth/send-reset-code` | 向指定邮箱发送密码重置验证码 |
 | [重置密码](#重置密码) | POST | `/api/auth/reset-password` | 通过邮箱验证码重置密码 |
 | [获取访问统计列表](#获取访问统计列表) | POST | `/api/auth/access-stats-list` | 获取所有IP访问统计列表（管理员专用） |
+| [获取用户列表](#获取用户列表) | POST | `/api/auth/user-list` | 获取所有用户列表（管理员专用） |
+| [删除用户](#删除用户) | POST | `/api/auth/delete-user` | 删除指定用户（管理员专用） |
 | [获取个人信息](#获取个人信息) | POST | `/api/auth/profile` | 获取当前用户的个人信息 |
 | [修改个人信息](#修改个人信息) | POST | `/api/auth/update-profile` | 修改当前用户的个人信息 |
 | [获取公开配置](#获取公开配置) | POST | `/api/config/public` | 获取状态为"公开"的配置项 |
@@ -482,6 +484,137 @@
 - visitCount表示该IP今日的访问次数
 - totalCount表示该IP的历史总访问次数
 - 管理员Token必须有效且用户状态为"正常"
+
+[返回顶部](#接口汇总)
+
+### 获取用户列表
+**接口地址**: `POST /api/auth/user-list`
+
+**请求示例**:
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+}
+```
+
+**请求字段说明**:
+- `token` (必填): 管理员的登录Token
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "获取用户列表成功",
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "email": "admin@example.com",
+      "avatar": "/images/avatar.png",
+      "sex": 1,
+      "bio": "这是管理员账户",
+      "role": "ADMIN",
+      "status": "正常",
+      "createdTime": "2025-01-10T10:30:45",
+      "loginTime": "2025-01-15T16:22:30"
+    },
+    {
+      "id": 2,
+      "username": "user001",
+      "email": "user001@example.com",
+      "avatar": null,
+      "sex": 0,
+      "bio": null,
+      "role": "USER",
+      "status": "正常",
+      "createdTime": "2025-01-12T14:15:20",
+      "loginTime": "2025-01-14T09:45:10"
+    }
+  ],
+  "totalCount": 2
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "权限不足，仅管理员可访问"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 仅限管理员角色访问，普通用户会被拒绝
+- 返回所有用户的基本信息，不包含密码字段
+- totalCount表示系统中的用户总数
+- 用户信息按创建时间排序
+- 管理员Token必须有效且用户状态为"正常"
+
+[返回顶部](#接口汇总)
+
+### 删除用户
+**接口地址**: `POST /api/auth/delete-user`
+
+**请求示例**:
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+  "userId": 2
+}
+```
+
+**请求字段说明**:
+- `token` (必填): 管理员的登录Token
+- `userId` (必填): 要删除的用户ID
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "用户删除成功"
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "权限不足，仅管理员可访问"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "用户不存在"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "不能删除自己的账户"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "不能删除唯一的管理员账户"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 仅限管理员角色访问，普通用户会被拒绝
+- 不能删除自己的账户
+- 不能删除唯一的管理员账户（至少保留一个管理员）
+- 删除用户时会自动删除相关的Token信息
+- 管理员Token必须有效且用户状态为"正常"
+- 删除操作不可恢复，请谨慎操作
 
 [返回顶部](#接口汇总)
 
