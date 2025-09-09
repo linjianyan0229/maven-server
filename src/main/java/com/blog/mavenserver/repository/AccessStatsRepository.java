@@ -22,4 +22,7 @@ public interface AccessStatsRepository extends JpaRepository<AccessStats, Long> 
     
     @Query("SELECT COALESCE(SUM(a.visitCount), 0) FROM AccessStats a WHERE a.updatedTime >= :startOfDay AND a.updatedTime < :endOfDay")
     Long sumTodayVisitCounts(@Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
+    
+    @Query("SELECT COALESCE(SUM(a.visitCount), 0) FROM AccessStats a")
+    Long sumAllVisitCounts();
 }

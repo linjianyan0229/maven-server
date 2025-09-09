@@ -160,4 +160,69 @@ public class AccessStatsService {
             logger.error("更新总访问次数失败：{}", e.getMessage(), e);
         }
     }
+    
+    /**
+     * 手动重置访问统计
+     * @param resetType "daily" - 重置今日统计, "all" - 重置所有统计
+     * @return 重置的记录数量
+     */
+    public Long resetAccessStats(String resetType) {
+        try {
+            Long resetCount = 0L;
+            
+            if ("daily".equals(resetType)) {
+                // 重置今日访问统计
+                List<AccessStats> allStats = accessStatsRepository.findAll();
+                
+                for (AccessStats stats : allStats) {
+                    if (stats.getVisitCount() > 0) {
+                        stats.setVisitCount(0);
+                        accessStatsRepository.save(stats);
+                        resetCount++;
+                    }
+                }
+                
+                // 重置总访问统计中的今日计数
+                Optional<TotalAccessStats> totalStatsOpt = totalAccessStatsRepository.findFirst();
+                if (totalStatsOpt.isPresent()) {
+                    TotalAccessStats totalStats = totalStatsOpt.get();
+                    totalStats.setTodayCount(0L);
+                    totalAccessStatsRepository.save(totalStats);
+                }
+                
+                logger.info("手动重置今日访问统计完成：重置了 {} 个IP的今日访问量", resetCount);
+                
+            } else if ("all".equals(resetType)) {
+                // 重置所有访问统计
+                List<AccessStats> allStats = accessStatsRepository.findAll();
+                
+                for (AccessStats stats : allStats) {
+                    stats.setVisitCount(0);
+                    stats.setTotalCount(0);
+                    accessStatsRepository.save(stats);
+                    resetCount++;
+                }
+                
+                // 重置总访问统计
+                Optional<TotalAccessStats> totalStatsOpt = totalAccessStatsRepository.findFirst();
+                if (totalStatsOpt.isPresent()) {
+                    TotalAccessStats totalStats = totalStatsOpt.get();
+                    totalStats.setTotalCount(0L);
+                    totalStats.setTodayCount(0L);
+                    totalAccessStatsRepository.save(totalStats);
+                } else {
+                    TotalAccessStats totalStats = new TotalAccessStats(0L, 0L);
+                    totalAccessStatsRepository.save(totalStats);
+                }
+                
+                logger.info("手动重置所有访问统计完成：重置了 {} 个IP的所有访问记录", resetCount);
+            }
+            
+            return resetCount;
+            
+        } catch (Exception e) {
+            logger.error("重置访问统计失败：resetType {}, 错误：{}", resetType, e.getMessage(), e);
+            return 0L;
+        }
+    }
 }

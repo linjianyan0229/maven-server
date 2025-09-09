@@ -271,4 +271,46 @@ public class AuthController {
         
         return response;
     }
+    
+    @PostMapping("/reset-stats")
+    public ResetStatsResponse resetStats(@RequestBody ResetStatsRequest request) {
+        logger.info("收到重置访问统计请求：重置类型 {}", request.getResetType());
+        
+        // 参数验证
+        if (request.getToken() == null || request.getToken().trim().isEmpty()) {
+            logger.warn("重置访问统计失败：Token为空");
+            return new ResetStatsResponse(false, "Token不能为空");
+        }
+        
+        if (request.getResetType() == null || request.getResetType().trim().isEmpty()) {
+            logger.warn("重置访问统计失败：重置类型为空");
+            return new ResetStatsResponse(false, "重置类型不能为空");
+        }
+        
+        String resetType = request.getResetType().trim();
+        if (!"daily".equals(resetType) && !"all".equals(resetType)) {
+            logger.warn("重置访问统计失败：重置类型无效：{}", resetType);
+            return new ResetStatsResponse(false, "重置类型无效，只能是daily或all");
+        }
+        
+        // 验证管理员权限
+        if (!authService.isAdminUser(request.getToken())) {
+            logger.warn("重置访问统计失败：权限不足");
+            return new ResetStatsResponse(false, "权限不足，仅管理员可访问");
+        }
+        
+        try {
+            Long resetCount = accessStatsService.resetAccessStats(resetType);
+            
+            String resetTypeDesc = "daily".equals(resetType) ? "今日访问统计" : "所有访问统计";
+            String message = resetTypeDesc + "重置成功";
+            
+            logger.info("重置访问统计请求处理成功：重置类型 {}，重置记录数 {}", resetType, resetCount);
+            return new ResetStatsResponse(true, message, resetCount, resetType);
+            
+        } catch (Exception e) {
+            logger.error("重置访问统计请求处理失败：重置类型 {}，错误：{}", resetType, e.getMessage(), e);
+            return new ResetStatsResponse(false, "重置访问统计失败，请稍后重试");
+        }
+    }
 }

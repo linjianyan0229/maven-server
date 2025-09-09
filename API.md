@@ -16,6 +16,7 @@
 | [获取用户列表](#获取用户列表) | POST | `/api/auth/user-list` | 获取所有用户列表（管理员专用） |
 | [删除用户](#删除用户) | POST | `/api/auth/delete-user` | 删除指定用户（管理员专用） |
 | [修改用户角色](#修改用户角色) | POST | `/api/auth/update-user-role` | 修改指定用户的角色身份（管理员专用） |
+| [重置访问统计](#重置访问统计) | POST | `/api/auth/reset-stats` | 手动重置访问统计数据（管理员专用） |
 | [获取个人信息](#获取个人信息) | POST | `/api/auth/profile` | 获取当前用户的个人信息 |
 | [修改个人信息](#修改个人信息) | POST | `/api/auth/update-profile` | 修改当前用户的个人信息 |
 | [获取公开配置](#获取公开配置) | POST | `/api/config/public` | 获取状态为"公开"的配置项 |
@@ -707,6 +708,80 @@
 - 管理员Token必须有效且用户状态为“正常”
 - 修改成功后返回更新后的用户信息
 - 角色修改操作会被记录在系统日志中
+
+[返回顶部](#接口汇总)
+
+### 重置访问统计
+**接口地址**: `POST /api/auth/reset-stats`
+
+**请求示例**:
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+  "resetType": "daily"
+}
+```
+
+**请求字段说明**:
+- `token` (必填): 管理员的登录Token
+- `resetType` (必填): 重置类型，"daily" - 重置今日访问统计，"all" - 重置所有访问统计
+
+**成功返回示例** (重置今日统计):
+```json
+{
+  "success": true,
+  "message": "今日访问统计重置成功",
+  "resetCount": 15,
+  "resetType": "daily"
+}
+```
+
+**成功返回示例** (重置所有统计):
+```json
+{
+  "success": true,
+  "message": "所有访问统计重置成功",
+  "resetCount": 25,
+  "resetType": "all"
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "权限不足，仅管理员可访问"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "重置类型无效，只能是daily或all"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Token不能为空"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 仅限管理员角色访问，普通用户会被拒绝
+- 重置类型只能是 "daily" 或 "all"
+- "daily" 模式：仅重置所有IP的今日访问次数（visit_count）和总访问统计中的今日计数
+- "all" 模式：重置所有IP的所有访问记录（visit_count 和 total_count）及总访问统计
+- 管理员Token必须有效且用户状态为“正常”
+- 重置操作不可恢复，请谨慎操作
+- resetCount 表示实际重置的IP记录数量
+- 重置操作会被记录在系统日志中
+- 系统会在每日凌晘00:00自动执行"daily"模式的重置
+
+[返回顶部](#接口汇总)
 
 [返回顶部](#接口汇总)
 
