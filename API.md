@@ -15,6 +15,7 @@
 | [获取访问统计列表](#获取访问统计列表) | POST | `/api/auth/access-stats-list` | 获取所有IP访问统计列表（管理员专用） |
 | [获取用户列表](#获取用户列表) | POST | `/api/auth/user-list` | 获取所有用户列表（管理员专用） |
 | [删除用户](#删除用户) | POST | `/api/auth/delete-user` | 删除指定用户（管理员专用） |
+| [修改用户角色](#修改用户角色) | POST | `/api/auth/update-user-role` | 修改指定用户的角色身份（管理员专用） |
 | [获取个人信息](#获取个人信息) | POST | `/api/auth/profile` | 获取当前用户的个人信息 |
 | [修改个人信息](#修改个人信息) | POST | `/api/auth/update-profile` | 修改当前用户的个人信息 |
 | [获取公开配置](#获取公开配置) | POST | `/api/config/public` | 获取状态为"公开"的配置项 |
@@ -615,6 +616,97 @@
 - 删除用户时会自动删除相关的Token信息
 - 管理员Token必须有效且用户状态为"正常"
 - 删除操作不可恢复，请谨慎操作
+
+[返回顶部](#接口汇总)
+
+### 修改用户角色
+**接口地址**: `POST /api/auth/update-user-role`
+
+**请求示例**:
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+  "userId": 2,
+  "role": "ADMIN"
+}
+```
+
+**请求字段说明**:
+- `token` (必填): 管理员的登录Token
+- `userId` (必填): 要修改角色的用户ID
+- `role` (必填): 新角色，只能是USER或ADMIN
+
+**成功返回示例**:
+```json
+{
+  "success": true,
+  "message": "用户角色修改成功",
+  "userInfo": {
+    "id": 2,
+    "username": "user001",
+    "email": "user001@example.com",
+    "avatar": null,
+    "sex": 0,
+    "bio": null,
+    "role": "ADMIN",
+    "status": "正常"
+  }
+}
+```
+
+**失败返回示例**:
+```json
+{
+  "success": false,
+  "message": "权限不足，仅管理员可访问"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "用户不存在"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "不能修改自己的角色"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "不能将唯一的管理员降级为普通用户"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "用户角色已经是管理员"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "角色值无效，只能是USER或ADMIN"
+}
+```
+
+**状态码**: 200
+
+**注意事项**:
+- 仅限管理员角色访问，普通用户会被拒绝
+- 不能修改自己的角色
+- 不能将唯一的管理员降级为普通用户（至少保留一个管理员）
+- 角色值只能是USER（普通用户）或ADMIN（管理员）
+- 管理员Token必须有效且用户状态为“正常”
+- 修改成功后返回更新后的用户信息
+- 角色修改操作会被记录在系统日志中
 
 [返回顶部](#接口汇总)
 

@@ -256,4 +256,19 @@ public class AuthController {
         
         return response;
     }
+    
+    @PostMapping("/update-user-role")
+    public UpdateUserRoleResponse updateUserRole(@RequestBody UpdateUserRoleRequest request) {
+        logger.info("收到修改用户角色请求：用户ID {}，目标角色 {}", request.getUserId(), request.getRole());
+        
+        UpdateUserRoleResponse response = authService.updateUserRole(request);
+        
+        if (response.getSuccess()) {
+            logger.info("修改用户角色请求处理成功：用户ID {}", request.getUserId());
+        } else {
+            logger.warn("修改用户角色请求处理失败：用户ID {}，原因：{}", request.getUserId(), response.getMessage());
+        }
+        
+        return response;
+    }
 }

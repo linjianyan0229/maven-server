@@ -653,4 +653,96 @@ public class AuthService {
             return new CommonResponse(false, "删除用户失败，请稍后重试");
         }
     }
+    
+    public UpdateUserRoleResponse updateUserRole(UpdateUserRoleRequest request) {
+        try {
+            // 参数验证
+            if (request.getToken() == null || request.getToken().trim().isEmpty()) {
+                logger.warn("修改用户角色失败：Token为空");
+                return new UpdateUserRoleResponse(false, "Token不能为空");
+            }
+            
+            if (request.getUserId() == null) {
+                logger.warn("修改用户角色失败：用户ID为空");
+                return new UpdateUserRoleResponse(false, "用户ID不能为空");
+            }
+            
+            if (request.getRole() == null || request.getRole().trim().isEmpty()) {
+                logger.warn("修改用户角色失败：角色为空");
+                return new UpdateUserRoleResponse(false, "角色不能为空");
+            }
+            
+            String role = request.getRole().trim();
+            if (!"USER".equals(role) && !"ADMIN".equals(role)) {
+                logger.warn("修改用户角色失败：角色值无效：{}", role);
+                return new UpdateUserRoleResponse(false, "角色值无效，只能是USER或ADMIN");
+            }
+            
+            // 验证管理员权限
+            if (!isAdminUser(request.getToken())) {
+                logger.warn("修改用户角色失败：权限不足");
+                return new UpdateUserRoleResponse(false, "权限不足，仅管理员可访问");
+            }
+            
+            // 检查要修改的用户是否存在
+            Optional<User> userOpt = userRepository.findById(request.getUserId());
+            if (!userOpt.isPresent()) {
+                logger.warn("修改用户角色失败：用户不存在，用户ID：{}", request.getUserId());
+                return new UpdateUserRoleResponse(false, "用户不存在");
+            }
+            
+            User userToUpdate = userOpt.get();
+            String originalRole = userToUpdate.getRole();
+            
+            // 检查是否尝试修改自己的角色
+            Optional<User> adminUserOpt = getUserByToken(request.getToken());
+            if (adminUserOpt.isPresent() && adminUserOpt.get().getId().equals(request.getUserId())) {
+                logger.warn("修改用户角色失败：不能修改自己的角色，管理员用户：{}，尝试修改用户ID：{}", 
+                    adminUserOpt.get().getUsername(), request.getUserId());
+                return new UpdateUserRoleResponse(false, "不能修改自己的角色");
+            }
+            
+            // 如果要将管理员降级为普通用户，检查是否是唯一的管理员
+            if ("ADMIN".equals(originalRole) && "USER".equals(role)) {
+                List<User> adminUsers = userRepository.findByRole("ADMIN");
+                if (adminUsers.size() <= 1) {
+                    logger.warn("修改用户角色失败：不能将唯一的管理员降级为普通用户，用户：{}", userToUpdate.getUsername());
+                    return new UpdateUserRoleResponse(false, "不能将唯一的管理员降级为普通用户");
+                }
+            }
+            
+            // 检查角色是否已经相同
+            if (role.equals(originalRole)) {
+                logger.warn("修改用户角色失败：用户角色已经是{}，用户：{}", role, userToUpdate.getUsername());
+                return new UpdateUserRoleResponse(false, "用户角色已经是" + ("ADMIN".equals(role) ? "管理员" : "普通用户"));
+            }
+            
+            // 更新用户角色
+            userToUpdate.setRole(role);
+            User updatedUser = userRepository.save(userToUpdate);
+            
+            // 构建返回的用户信息
+            UserInfo userInfo = new UserInfo();
+            userInfo.setId(updatedUser.getId());
+            userInfo.setUsername(updatedUser.getUsername());
+            userInfo.setEmail(updatedUser.getEmail());
+            userInfo.setAvatar(updatedUser.getAvatar());
+            userInfo.setSex(updatedUser.getSex());
+            userInfo.setBio(updatedUser.getBio());
+            userInfo.setRole(updatedUser.getRole());
+            userInfo.setStatus(updatedUser.getStatus());
+            
+            String roleChangeDesc = "ADMIN".equals(role) ? "管理员" : "普通用户";
+            String originalRoleDesc = "ADMIN".equals(originalRole) ? "管理员" : "普通用户";
+            
+            logger.info("修改用户角色成功：用户ID {}，用户名 {}，角色从 {} 修改为 {}", 
+                updatedUser.getId(), updatedUser.getUsername(), originalRoleDesc, roleChangeDesc);
+            
+            return new UpdateUserRoleResponse(true, "用户角色修改成功", userInfo);
+            
+        } catch (Exception e) {
+            logger.error("修改用户角色异常：{}", e.getMessage(), e);
+            return new UpdateUserRoleResponse(false, "修改用户角色失败，请稍后重试");
+        }
+    }
 }
